@@ -1,13 +1,13 @@
-#import pygame
-#import sys
-#import time
-from minmax_alg import 
-        
+import pygame
+import sys
+import time
+import local_lib
+
 turn = "X"
 run = True
 draw = False
 game = True
-win = False
+is_terminal = False
 winner = ""
 turn_number = 0
 score = 0
@@ -21,8 +21,8 @@ ts, w, h, c1, c2 = 300, *background.get_size(), (128, 128, 128), (64, 64, 64)
 tiles = [((x*ts, y*ts, ts, ts), c1 if (x+y) % 2 == 0 else c2) for x in range((w+ts-1)//ts) for y in range((h+ts-1)//ts)]
 [pygame.draw.rect(background, color, rect) for rect, color in tiles]
 
-x_img = pygame.image.load("x.png") # loading the images as python object
-y_img = pygame.image.load("o.png")
+x_img = pygame.image.load("~/image_folder/X.png") # loading the images as python object
+y_img = pygame.image.load("~/image_folder/o.png")
 
 x_img = pygame.transform.scale(x_img, (290, 290)) # resizing images
 o_img = pygame.transform.scale(y_img, (290, 290))
@@ -47,9 +47,7 @@ def drawXO(row, col, turn):
 #         analyze.
 # MaximizingPlayer = The evaluated score of the players position/move.
 
-minimax()
-
-def evaluation():
+def evaluation(): # Getting a score for the minimax algorithm
 
     if turn == "x":
         turn_number[1] = turn_number[1] + 1
@@ -62,26 +60,22 @@ def evaluation():
             for i in range(2):
                 if grid[i][0] == grid[i][1] == grid[i][2] != "":
                     score[1] = 2
-                    return
+
                 if grid[0][i] == grid[1][i] == grid[2][i] != "":
                     score[1] = 2
-                    return
+
 
             if [grid[i][i] for i in range(2)].count("X") == 3:
                 score[1] = 2
-                return
 
             elif [grid[i][i] for i in range(2)].count("O") == 3:
                 score[1] = 2
-                return
 
             if [grid[i][2-i] for i in range(2)].count("X") == 3:
                 score[1] = 2
-                return
 
             elif [grid[i][2-i] for i in range(2)].count("O") == 3:
                 score[1] = 2
-                return
 
     elif turn == "o":
         turn_number[0] = turn_number[0] + 1
@@ -94,26 +88,29 @@ def evaluation():
             for i in range(2):
                 if grid[i][0] == grid[i][1] == grid[i][2] != "":
                     score[0] = 2
-                    return
+    
+
                 if grid[0][i] == grid[1][i] == grid[2][i] != "":
                     score[0] = 2
-                    return
+    
 
-            if [grid[i][i] for i in range(2)].count("X") == 3:
+            if [grid[i][i] for i in range(2)].count("X") == 2:
                 score[0] = 2
-                return
 
-            elif [grid[i][i] for i in range(2)].count("O") == 3:
+            elif [grid[i][i] for i in range(2)].count("O") == 2:
                 score[0] = 2
-                return
 
-            if [grid[i][2-i] for i in range(2)].count("X") == 3:
+            if [grid[i][2-i] for i in range(2)].count("X") == 2:
                 score[0] = 2
-                return
 
-            elif [grid[i][2-i] for i in range(2)].count("O") == 3:
+            elif [grid[i][2-i] for i in range(2)].count("O") == 2:
                 score[0] = 2
-                return
+
+    print(score)
+    return score
+
+
+minimax(score)
 
 
 def validation(grid, is_terminal):
@@ -123,62 +120,57 @@ def validation(grid, is_terminal):
         if grid[i][0] == grid[i][1] == grid[i][2] != "":
             win = True
             winner = grid[i][0]
-            game = False
             is_terminal = True
-            return
         
         if grid[0][i] == grid[1][i] == grid[2][i] != "":
             win = True
             winner = grid[0][i]
-            game = False
-            return
+            is_terminal = True
 
     if [grid[i][i] for i in range(3)].count("X") == 3:
         win = True
         winner = "X"
-        game = False
-        return
+        is_terminal = True
 
     elif [grid[i][i] for i in range(3)].count("O") == 3:
         win = True
         winner = "O"
-        game = False
-        return
+        is_terminal = True
 
     if [grid[i][2-i] for i in range(3)].count("X") == 3:
         win = True
         winner = "X"
-        game = False
-        return
+        is_terminal = True
 
     elif [grid[i][2-i] for i in range(3)].count("O") == 3:
         win = True
         winner = "O"
-        game = False
-        return
+        is_terminal = True
 
     if all(cell != "" for row in grid for cell in row):
         draw = True
-        game = False
+        is_terminal = True
+
+    print("Is it a draw? =",draw)
+    print("Is it terminal? =",is_terminal)
+    return draw, is_terminal
 
 
-def announcment(win, winner, draw):
+def announcment(is_terminal, winner, draw):
     # Win Consequence
-    if win == True:
+    if is_terminal  == True:
         print(winner+" has won the game.")
-        quit_game()
-
-    #Draw consequene
-    if draw == True:
-        print("Draw")
-        quit_game()
-
-
-def quit_game():
         time.sleep(3)
         pygame.quit()
         sys.exit()
-        
+
+    #Draw consequene
+    if is_terminal == True:
+        print("Draw")
+        time.sleep(3)
+        pygame.quit()
+        sys.exit()
+
 
 while run == True:
     for event in pygame.event.get():
