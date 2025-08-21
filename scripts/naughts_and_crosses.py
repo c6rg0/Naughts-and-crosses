@@ -1,7 +1,8 @@
 import pygame
 import sys
 import time
-import local_lib
+import copy
+import math
 
 turn = "X"
 run = True
@@ -21,8 +22,8 @@ ts, w, h, c1, c2 = 300, *background.get_size(), (128, 128, 128), (64, 64, 64)
 tiles = [((x*ts, y*ts, ts, ts), c1 if (x+y) % 2 == 0 else c2) for x in range((w+ts-1)//ts) for y in range((h+ts-1)//ts)]
 [pygame.draw.rect(background, color, rect) for rect, color in tiles]
 
-x_img = pygame.image.load("~/image_folder/X.png") # loading the images as python object
-y_img = pygame.image.load("~/image_folder/o.png")
+x_img = pygame.image.load("image_folder/x.png") # loading the images as python object
+y_img = pygame.image.load("image_folder/o.png")
 
 x_img = pygame.transform.scale(x_img, (290, 290)) # resizing images
 o_img = pygame.transform.scale(y_img, (290, 290))
@@ -42,75 +43,79 @@ def drawXO(row, col, turn):
     elif turn == "O":
         window.blit(o_img, (posx, posy))
 
-# Node = The board (the state it is in - as far as I'm aware). 
-# Depth = Number of moves that the algorithm should 
-#         analyze.
-# MaximizingPlayer = The evaluated score of the players position/move.
 
-def evaluation(): # Getting a score for the minimax algorithm
+def is_terminal(node):
+    for i in range(3):
+        if node[i][0] == node[i][1] == node[i][2] != "":
+            return True
+        if node[0][i] == node[1][i] == node[2][i] != "":
+            return True
 
-    if turn == "x":
-        turn_number[1] = turn_number[1] + 1
+    if node[0][0] == node[1][1] == node[2][2] != "":
+        return True
+    if node[0][2] == node[1][1] == node[2][0] != "":
+        return True
 
-        if turn_number[1] == 1:
-            score[1] = 1
+    if all(cell != "" for row in node for cell in row):
+        return True
 
-        if turn_number[1] > 1:
-
-            for i in range(2):
-                if grid[i][0] == grid[i][1] == grid[i][2] != "":
-                    score[1] = 2
-
-                if grid[0][i] == grid[1][i] == grid[2][i] != "":
-                    score[1] = 2
+    return False
 
 
-            if [grid[i][i] for i in range(2)].count("X") == 3:
-                score[1] = 2
+def minimax(node, depth, maximizingPlayer):
+    if depth == 0 or is_terminal(node):
+        return heuristic_value(node)
 
-            elif [grid[i][i] for i in range(2)].count("O") == 3:
-                score[1] = 2
+    best_move = None
+    player = "O" if maximizingPlayer else "X"
 
-            if [grid[i][2-i] for i in range(2)].count("X") == 3:
-                score[1] = 2
+    if maximizingPlayer:
+        value = -math.inf
+        for child, _ in get_children(node, player):
+            value = max(value, minimax(child, depth - 1, False))
+        return value
+    else:
+        value = math.inf
+        for child, _ in get_children(node, player):
+            value = min(value, minimax(child, depth - 1, True))
+        return value
 
-            elif [grid[i][2-i] for i in range(2)].count("O") == 3:
-                score[1] = 2
 
-    elif turn == "o":
-        turn_number[0] = turn_number[0] + 1
-
-        if turn_number[0] == 1:
-            score[0] = 1
-
-        if turn_number[0] > 1:
-
-            for i in range(2):
-                if grid[i][0] == grid[i][1] == grid[i][2] != "":
-                    score[0] = 2
+def get_children(node, player):
+    children = []
+    for row in range(3):
+        for col in range(3):
+            if node[row][col] == "":
+                new_node = copy.deepcopy(node)
+                new_node[row][col] = player
+                children.append((new_node, (row, col)))
+    return children
     
 
-                if grid[0][i] == grid[1][i] == grid[2][i] != "":
-                    score[0] = 2
-    
+def heuristic_value(node):
+    for i in range(3):
+        if node[i][0] == node[i][1] == node[i][2] != "":
+            return 10 if node[i][0] == "O" else -10
+        if node[0][i] == node[1][i] == node[2][i] != "":
+            return 10 if node[0][i] == "O" else -10
 
-            if [grid[i][i] for i in range(2)].count("X") == 2:
-                score[0] = 2
+    if node[0][0] == node[1][1] == node[2][2] != "":
+        return 10 if node[0][0] == "O" else -10
+    if node[0][2] == node[1][1] == node[2][0] != "":
+        return 10 if node [0][2] == "O" else -10
 
-            elif [grid[i][i] for i in range(2)].count("O") == 2:
-                score[0] = 2
-
-            if [grid[i][2-i] for i in range(2)].count("X") == 2:
-                score[0] = 2
-
-            elif [grid[i][2-i] for i in range(2)].count("O") == 2:
-                score[0] = 2
-
-    print(score)
-    return score
+    return 0
 
 
-minimax(score)
+def find_best_move():
+    best_score = -math.inf
+    best_move = None
+    for child, move in get_children(grid, "O"):
+        score = minimax(child, depth=4, maximizingPlayer=False)
+        if score > best_score:
+            best_score = score
+            best_move = move
+    return best_move
 
 
 def validation(grid, is_terminal):
@@ -189,7 +194,13 @@ while run == True:
                     if grid[row][col] == "":
                         grid[row][col] = turn
                         turn = "O" if turn == "X" else "X"
-                        validation(grid)
+                        if turn == "O":
+                            move = find_best_move()
+                            if move:
+                                row, col = move
+                                grid[row][col] = "O"
+                                turn = "X"
+                        validation(grid, is_terminal)
                         print(f"Placed {turn} at ({row}, {col})") # the code runs the while loop for each (players) turn
 
                     else:
