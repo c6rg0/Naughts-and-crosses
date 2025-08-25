@@ -4,10 +4,9 @@ import time
 import copy
 import math
 
-turn = "X"
 run = True
+turn = "X"
 draw = False
-game = True
 is_terminal = False
 winner = ""
 turn_number = 0
@@ -44,26 +43,32 @@ def drawXO(row, col, turn):
         window.blit(o_img, (posx, posy))
 
 
-def is_terminal(node):
+def check_for_terminal(is_terminal):
     for i in range(3):
-        if node[i][0] == node[i][1] == node[i][2] != "":
-            return True
-        if node[0][i] == node[1][i] == node[2][i] != "":
-            return True
+        if grid[i][0] == grid[i][1] == grid[i][2] != "":
+            is_terminal = True
+            return is_terminal
+        if grid[0][i] == grid[1][i] == grid[2][i] != "":
+            is_terminal = True
+            return is_terminal
 
-    if node[0][0] == node[1][1] == node[2][2] != "":
-        return True
-    if node[0][2] == node[1][1] == node[2][0] != "":
-        return True
+    if grid[0][0] == grid[1][1] == grid[2][2] != "":
+        is_terminal = True
+        return is_terminal
 
-    if all(cell != "" for row in node for cell in row):
-        return True
+    if grid[0][2] == grid[1][1] == grid[2][0] != "":
+        is_terminal = True
+        return is_terminal
 
-    return False
+    if all(cell != "" for row in grid for cell in row):
+        is_terminal = True
+        return is_terminal
 
+    is_terminal = False
+    return is_terminal
 
-def minimax(node, depth, maximizingPlayer):
-    if depth == 0 or is_terminal(node):
+def minimax(node, depth, maximizingPlayer, is_terminal):
+    if depth == 0 or is_terminal == True:
         return heuristic_value(node)
 
     best_move = None
@@ -107,48 +112,43 @@ def heuristic_value(node):
     return 0
 
 
-def find_best_move():
+def find_best_move(is_terminal):
     best_score = -math.inf
     best_move = None
     for child, move in get_children(grid, "O"):
-        score = minimax(child, depth=4, maximizingPlayer=False)
+        depth = 4
+        maximizingPlayer = False
+        score = minimax(child, is_terminal, depth, maximizingPlayer)
         if score > best_score:
             best_score = score
             best_move = move
     return best_move
 
 
-def validation(grid, is_terminal):
-    global win, game, winner, draw
+def validation(grid, is_terminal, winner, draw):
 
     for i in range(3):
         if grid[i][0] == grid[i][1] == grid[i][2] != "":
-            win = True
             winner = grid[i][0]
             is_terminal = True
         
         if grid[0][i] == grid[1][i] == grid[2][i] != "":
-            win = True
             winner = grid[0][i]
             is_terminal = True
 
     if [grid[i][i] for i in range(3)].count("X") == 3:
-        win = True
         winner = "X"
         is_terminal = True
 
     elif [grid[i][i] for i in range(3)].count("O") == 3:
-        win = True
         winner = "O"
         is_terminal = True
 
     if [grid[i][2-i] for i in range(3)].count("X") == 3:
-        win = True
         winner = "X"
         is_terminal = True
 
     elif [grid[i][2-i] for i in range(3)].count("O") == 3:
-        win = True
         winner = "O"
         is_terminal = True
 
@@ -158,24 +158,24 @@ def validation(grid, is_terminal):
 
     print("Is it a draw? =",draw)
     print("Is it terminal? =",is_terminal)
-    return draw, is_terminal
-
+    announcment(is_terminal, winner, draw)
 
 def announcment(is_terminal, winner, draw):
     # Win Consequence
-    if is_terminal  == True:
-        print(winner+" has won the game.")
-        time.sleep(3)
-        pygame.quit()
-        sys.exit()
-
-    #Draw consequene
+    print (draw + is_terminal)
     if is_terminal == True:
-        print("Draw")
-        time.sleep(3)
-        pygame.quit()
-        sys.exit()
+        if winner == "X" or "O":
+            print(winner+" has won the game.")
+            time.sleep(3)
+            pygame.quit()
+            sys.exit()
 
+        #Draw consequene
+        if draw == True:
+            print("Draw")
+            time.sleep(3)
+            pygame.quit()
+            sys.exit()
 
 while run == True:
     for event in pygame.event.get():
@@ -188,24 +188,27 @@ while run == True:
             row, col = my // ts, mx // ts
             print(row, col)
             
-            if game == True:
+            if is_terminal == False:
             # Check bounds and update grid if cell is empty
                 if (0 <= row < 3 and 0 <= col < 3):
                     if grid[row][col] == "":
                         grid[row][col] = turn
                         turn = "O" if turn == "X" else "X"
                         if turn == "O":
-                            move = find_best_move()
+                            move = find_best_move(is_terminal)
                             if move:
                                 row, col = move
                                 grid[row][col] = "O"
                                 turn = "X"
-                        validation(grid, is_terminal)
-                        print(f"Placed {turn} at ({row}, {col})") # the code runs the while loop for each (players) turn
-
+                        validation(grid, is_terminal, winner, draw)
+                        print(f"Placed {turn} at ({row}, {col})")
+                        
                     else:
                         print(f"Cell ({row}, {col}) already occupied by {grid[row][col]}")
-                    
+
+            if is_terminal == True:
+                announcment(is_terminal, winner, draw)
+
     window.blit(background, (0, 0))
 
     for row in range(3):
@@ -215,7 +218,3 @@ while run == True:
 
     pygame.display.update()
     clock.tick(60)
-
-    if not game:
-        announcment(win, winner, draw)
-
