@@ -4,6 +4,10 @@ import time
 import copy
 import math
 
+pygame.init()
+window = pygame.display.set_mode((900,900))
+clock = pygame.time.Clock()
+
 run = True
 turn = "X"
 draw = False
@@ -11,10 +15,6 @@ is_terminal = False
 winner = ""
 turn_number = 0
 score = 0
-
-pygame.init()
-window = pygame.display.set_mode((900, 900))
-clock = pygame.time.Clock()
 
 background = pygame.Surface(window.get_size())
 ts, w, h, c1, c2 = 300, *background.get_size(), (128, 128, 128), (64, 64, 64)
@@ -28,8 +28,6 @@ x_img = pygame.transform.scale(x_img, (290, 290)) # resizing images
 o_img = pygame.transform.scale(y_img, (290, 290))
 
 grid = [["" for _ in range(3)] for _ in range(3)]
-print(grid)
-
 
 def drawXO(row, col, turn):
     global board
