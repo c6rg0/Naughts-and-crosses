@@ -1,8 +1,6 @@
 Read me:
 
-A naughts and crosses game, using pygame and 2d graphics.
-I'm currently trying to implement a minmax algorithm to make a computer player.
-
+A naughts and crosses game, using pygame graphics, and a minimax algorithm for playing against the computer.
 
 Prerequisites:
 
